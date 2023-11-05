@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         trailinthedatabase-anki
 // @namespace    http://tampermonkey.net/
-// @version      0.1
+// @version      0.2
 // @description  Patch anki card to add sound from trailinthedatabase
 // @author       Ossan
 // @match        *://trailsinthedatabase.com/*
@@ -22,26 +22,36 @@ var ankiConnectURL = "http://127.0.0.1:8765";
 // -------------------------------
 
 (function() {
+    const rootNode = document.getElementsByClassName("simple__loading__bar")[0];
+    const config = { attributes: true, childList: false, subtree: false };
+    const observer = new MutationObserver((mutationList, observer) => {
+      for (const mutation of mutationList) {
+          if(mutation.attributeName == 'class' && mutation.target.classList.contains('simple__loading__bar--done')){
+              updateTable();
+          }
+      }
+    });
+    observer.observe(rootNode, config);
     console.log("TamperMonkey script: trailinthedatabase-anki installed");
-    setTimeout(updateTable, 1500);
 })();
 
-
 function updateTable(){
-    var table = document.getElementsByClassName("table")[0];
-    var audioList = table.getElementsByTagName("audio");
-    var styles = `
+    var tableList = document.getElementsByClassName("table");
+    for (let table of tableList) {
+        var audioList = table.getElementsByTagName("audio");
+        var styles = `
         color: rgb(21, 136, 62);
         background: none;
         font-weight: 700;
         border: 0px;
         border-radius: 0px;`
-    for (let audio of audioList) {
-        var button = document.createElement("button");
-        button.innerHTML = "+";
-        button.style= styles;
-        button.onclick = function() { updateLastAnkiNote(audio.currentSrc); };
-        audio.insertAdjacentElement("afterend", button)
+        for (let audio of audioList) {
+            var button = document.createElement("button");
+            button.innerHTML = "+";
+            button.style= styles;
+            button.onclick = function() { updateLastAnkiNote(audio.currentSrc); };
+            audio.insertAdjacentElement("afterend", button)
+        }
     }
     console.log("TamperMonkey script: update table");
 }

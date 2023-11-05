@@ -38,3 +38,8 @@ Update parameters to your environment
 
   ![Image](./README/2.png)
 </details>
+
+### Use case
+
+You create your anki note about a Trails' Game with an external tool like tachiyomi and you want to attach the audio of the sentence.
+This plugin doesn't allow you to create an Anki Note.
