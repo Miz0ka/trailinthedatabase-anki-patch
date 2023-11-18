@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         trailinthedatabase-anki
 // @namespace    http://tampermonkey.net/
-// @version      0.2
+// @version      0.3
 // @description  Patch anki card to add sound from trailinthedatabase
 // @author       Ossan
 // @match        *://trailsinthedatabase.com/*
@@ -17,8 +17,10 @@
 */
 
 // ------------  PARAMS ----------
-var ankiNoteAudioFieldName = "SentAudio";
 var ankiConnectURL = "http://127.0.0.1:8765";
+var ankiNoteAudioFieldName = "SentAudio";
+var ankiNoteEnglishFieldName = "SentEng";
+var ankiTagName = "Sora-No-Kiseki";
 // -------------------------------
 
 (function() {
@@ -46,17 +48,21 @@ function updateTable(){
         border: 0px;
         border-radius: 0px;`
         for (let audio of audioList) {
+            var englishSentence = audio.nextSibling.innerHTML;
+            englishSentence = englishSentence.replace(/<br>/g," ");
+            englishSentence = englishSentence.replace(/[^\x20-\x7E]/g, ''); // Remove non printable caractere
             var button = document.createElement("button");
             button.innerHTML = "+";
-            button.style= styles;
-            button.onclick = function() { updateLastAnkiNote(audio.currentSrc); };
+            button.style = styles;
+            button.title = "Create anki note"; 
+            button.onclick = function() { updateLastAnkiNote(audio.currentSrc, englishSentence); };
             audio.insertAdjacentElement("afterend", button)
         }
     }
     console.log("TamperMonkey script: update table");
 }
 
-function updateLastAnkiNote(audioURL){
+function updateLastAnkiNote(audioURL, officialEnglishTranslation){
     let lastCreatedNotesRequest = {
         "action": "findNotes",
         "version": 6,
@@ -82,7 +88,7 @@ function updateLastAnkiNote(audioURL){
 
             guiBrowserUnFocus();
             updateNoteTag(noteId);
-            updateNoteField(noteId, audioURL);
+            updateNoteField(noteId, audioURL, officialEnglishTranslation);
             guiBrowserFocusUpdatedNote(noteId);
         },
       onerror: function(response){
@@ -92,13 +98,12 @@ function updateLastAnkiNote(audioURL){
 }
 
 function updateNoteTag(noteId){
-    let tagName="Sore-no-kiseki"
     let addNoteTagRequest = {
         "action": "addTags",
         "version": 6,
         "params": {
             "notes": [noteId],
-            "tags": tagName
+            "tags": ankiTagName
         }
     }
     GM_xmlhttpRequest({
@@ -109,7 +114,7 @@ function updateNoteTag(noteId){
           "Content-Type": "application/x-www-form-urlencoded"
         },
         onload: function(response) {
-            console.log(`${noteId} have been tagged [${tagName}]`);
+            console.log(`${noteId} have been tagged [${ankiTagName}]`);
           },
         onerror: function(response){
            alert("A problem occured with the tag request.");
@@ -117,7 +122,7 @@ function updateNoteTag(noteId){
       });
 }
 
-function updateNoteField(noteId, audioURL){
+function updateNoteField(noteId, audioURL, officialEnglishTranslation){
     let fileName = audioURL.slice(audioURL.indexOf('talk/')).replace(/[^A-Za-z0-9]/g, "_")
     let updateNote = {
         "action": "updateNoteFields",
@@ -126,6 +131,7 @@ function updateNoteField(noteId, audioURL){
             "note": {
                 "id": noteId,
                 "fields": {
+                  [ankiNoteEnglishFieldName]: officialEnglishTranslation,
                 },
             	"audio": [{
                     "url": audioURL,
@@ -146,7 +152,7 @@ function updateNoteField(noteId, audioURL){
           "Content-Type": "application/x-www-form-urlencoded"
         },
         onload: function(response) {
-            console.log(`${noteId} have been update with '${audioURL}'`);
+            console.log(`${noteId} have been update with '${audioURL}' and '${officialEnglishTranslation}'`);
           },
         onerror: function(response){
            alert("A problem occured with the tag request.");
