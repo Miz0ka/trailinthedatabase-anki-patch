@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         trailinthedatabase-anki
 // @namespace    http://tampermonkey.net/
-// @version      0.3
+// @version      0.4
 // @description  Patch anki card to add sound from trailinthedatabase
 // @author       Ossan
 // @match        *://trailsinthedatabase.com/*
@@ -48,18 +48,22 @@ function updateTable(){
         border: 0px;
         border-radius: 0px;`
         for (let audio of audioList) {
-            var englishSentence = audio.nextSibling.innerHTML;
-            englishSentence = englishSentence.replace(/<br>/g," ");
-            englishSentence = englishSentence.replace(/[^\x20-\x7E]/g, ''); // Remove non printable caractere
             var button = document.createElement("button");
             button.innerHTML = "+";
             button.style = styles;
-            button.title = "Create anki note"; 
-            button.onclick = function() { updateLastAnkiNote(audio.currentSrc, englishSentence); };
+            button.title = "Create anki note";
+            button.onclick = function() { updateLastAnkiNote(audio.currentSrc, extractEnglishSentence(audio)); };
             audio.insertAdjacentElement("afterend", button)
         }
     }
     console.log("TamperMonkey script: update table");
+}
+
+function extractEnglishSentence(audioBalise){
+    var englishSentence = audioBalise.nextSibling.nextSibling.innerHTML;
+    englishSentence = englishSentence.replace(/<br>/g," ");
+    englishSentence = englishSentence.replace(/[^\x20-\x7E]/g, '')
+    return englishSentence
 }
 
 function updateLastAnkiNote(audioURL, officialEnglishTranslation){
@@ -183,7 +187,6 @@ function guiBrowserUnFocus(){
         },
       });
 }
-
 
 function guiBrowserFocusUpdatedNote(noteId){
     let guiBrowserControl = {
