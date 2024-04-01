@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         trailinthedatabase-anki
 // @namespace    http://tampermonkey.net/
-// @version      0.4
+// @version      0.5
 // @description  Patch anki card to add sound from trailinthedatabase
 // @author       Ossan
 // @match        *://trailsinthedatabase.com/*
@@ -20,22 +20,38 @@
 var ankiConnectURL = "http://127.0.0.1:8765";
 var ankiNoteAudioFieldName = "SentAudio";
 var ankiNoteEnglishFieldName = "SentEng";
-var ankiTagName = "Sora-No-Kiseki";
+var ankiTagName = "Trails-all-games";
+var gamesData = [];
 // -------------------------------
 
 (function() {
+    fetchGamesData();
     const rootNode = document.getElementsByClassName("simple__loading__bar")[0];
     const config = { attributes: true, childList: false, subtree: false };
     const observer = new MutationObserver((mutationList, observer) => {
       for (const mutation of mutationList) {
           if(mutation.attributeName == 'class' && mutation.target.classList.contains('simple__loading__bar--done')){
               updateTable();
+              updateTag();
           }
       }
     });
     observer.observe(rootNode, config);
     console.log("TamperMonkey script: trailinthedatabase-anki installed");
 })();
+
+function fetchGamesData(){
+    GM_xmlhttpRequest({
+        method: "GET",
+        url: "https://trailsinthedatabase.com/api/game/",
+        onload: function(response) {
+            gamesData = JSON.parse(response.responseText);
+        },
+        onerror: function(response){
+           alert("A problem occured while fetching trailsinthedatabase API.");
+        },
+      });
+}
 
 function updateTable(){
     var tableList = document.getElementsByClassName("table");
@@ -57,6 +73,30 @@ function updateTable(){
         }
     }
     console.log("TamperMonkey script: update table");
+}
+
+function updateTag(){
+    var urlParams = location.search.substr(1).split("&");
+    var gameId = 0;
+    for (const element of urlParams) {
+        let param = element.split("=")
+        if (param[0] == "game_id") {
+            gameId = param[1];
+            break;
+        }
+    }
+    if (gameId == 0) {
+        ankiTagName = "Trails-all-games";
+        console.log("All games category, resetting anki tag name to " + ankiTagName);
+    } else {
+        for (const game of gamesData) {
+            if (game.id == gameId) {
+                ankiTagName = game.titleJpnRoman.replace(/ /g,"-");
+                console.log("Setting anki tag name to " + ankiTagName);
+                break;
+            }
+        }
+    }
 }
 
 function extractEnglishSentence(audioBalise){
