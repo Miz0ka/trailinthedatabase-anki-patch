@@ -34,7 +34,7 @@ Update parameters to your environment
 
 #### 5.
 <details>
-  <summary>Now you can go on <a href="https://trailinthedatabase.com/">https://trailinthedatabase.com/</a> and toggle the script by clicking on the icon</summary>
+  <summary>Now you can go on <a href="https://trailsinthedatabase.com/">https://trailsinthedatabase.com/</a> and toggle the script by clicking on the icon</summary>
 
   ![Image](./README/2.png)
 </details>
